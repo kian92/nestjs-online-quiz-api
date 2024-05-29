@@ -28,7 +28,7 @@ export class UsersService {
         return await this.usersRepository.find();
     }
 
-    async findOne(id: number): Promise<User | null> {
+    async findById(id: number): Promise<User | null> {
         const user = await this.usersRepository.findOneBy({ id });
 
         if (!user) {
@@ -37,8 +37,17 @@ export class UsersService {
         return user;
     }
 
+    async findByUsername(username: string): Promise<User | undefined> {
+        const user = await this.usersRepository.findOneBy({ username });
+
+        if (!user) {
+            throw new NotFoundException('User Not Found');
+        }
+        return user;
+    }
+
     async createUser(createUserDto: CreateUserDto) {
-        const role = 'student';
+        const role = createUserDto.role ?? 'student';
         const takenQuizes = [];
         const passwordHash = await bcrypt.hash(createUserDto.password, this.saltRounds);
         const username = this.generateUniqueUsername(createUserDto.fullName, await this.getLastUserId());
@@ -50,7 +59,7 @@ export class UsersService {
     }
 
     async update(id: number, updateUserDto: UpdateUserDto) {
-        const user = await this.findOne(id);
+        const user = await this.findById(id);
         if (user) {
             const passwordHash = await bcrypt.hash(updateUserDto.password, this.saltRounds);
             return this.usersRepository.update(id, {...updateUserDto, password: passwordHash});
